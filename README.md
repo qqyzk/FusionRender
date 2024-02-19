@@ -9,7 +9,7 @@ group are then rendered using the same rendering pipeline.
 
 When rendering the group of objects together, the data is concatenated and transmitted to the GPU. To ensure that the data required for each graphic’s rendering is accessible after merging, FusionRender employs instance indices to track individual objects. Building upon the abovementioned method, we have considered dividing the merge operations into several batches for submission.
 
-<img src='./docs/overview.png'/>
+<img src='./docs/overview.png'>
 
 ## Our Renderer
 
