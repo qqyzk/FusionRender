@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgpu - GLTFloader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<!-- <link type="text/css" rel="stylesheet" href="main.css"> -->
+	</head>
+	<body>
+		<input  id="button" type="button" value="start" >  
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./src/three.module.js",
+					"three/jsm/": "./jsm/",
+					"three/nodes": "./src/jsm/nodes/Nodes.js",
+					"stats": "./src/myStats.js",
+                    "roundedbox": "./src/jsm/geometries/RoundedBoxGeometry.js"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+			import * as Nodes from 'three/nodes';
+
+			import WebGPU from './src/jsm/capabilities/WebGPU.js';
+			import WebGPURenderer from './src/jsm/renderers/webgpu/WebGPURenderer.js';
+
+			import { RGBMLoader } from './src/jsm/loaders/RGBMLoader.js';
+
+			import { OrbitControls } from './src/jsm/controls/OrbitControls.js';
+			import { GLTFLoader } from './src/jsm/loaders/GLTFLoader.js';
+            import { RoundedBoxGeometry } from "roundedbox";
+			import Stats from 'stats';
+			var btn = document.getElementById("button");  
+        	btn.onclick = function conduct(){
+			let initTime = ( performance || Date ).now()
+			let loaded=false;
+			let camera, scene, renderer,stats;
+			let startFlag = true;
+			let frameCount = 0;
+			let startTime = null;
+			let shouldLog = true;
+			let first = true;
+			let frameSum=0;
+
+			init();
+			render();
+
+			function init() {
+				
+				
+				if ( WebGPU.isAvailable() === false ) {
+
+					document.body.appendChild( WebGPU.getErrorMessage() );
+
+					throw new Error( 'No WebGPU support' );
+
+				}
+
+				const container = document.createElement( 'div' );
+				document.body.appendChild( container );
+				stats = new Stats();
+				stats.dom.style.top = '20px';
+				stats.dom.style.left = '300px';
+				container.appendChild(stats.dom);
+
+				// camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+				// camera.position.set( - 1.8, 0.6, 2.7 );
+				camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight,1,100 );
+
+				scene = new THREE.Scene();
+				const light = new THREE.PointLight( 0xffffff );
+				camera.add( light );
+
+
+				 //添加立方体
+			
+
+				let minx = -0.5, miny = -1, minz= -15;
+				let maxx = 0.5, maxy=1, maxz=-3;
+				let edgeNum=8;
+				let total=512;
+				let cnt=0;
+				for(let i=0;i<edgeNum;++i){
+					for(let j=0;j<edgeNum;++j){
+						for(let k=0;k<edgeNum;++k){
+							// const geometry2 = new THREE.BoxGeometry( 1, 1, 1 );//立方体对象，包含立方体中的顶点(vertices)和面(faces)
+            				const geometry2 =  new RoundedBoxGeometry();
+                            const material2 = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );//添加材质，让立方体有颜色
+
+							const cube = new THREE.Mesh( geometry2, material2 );//网格包括一个几何体以及作用在几何体上的材质，可以直接将网格对象放到场景中，并且让他自由移动
+							// console.log(cube)
+							// break;
+							if(edgeNum===1){
+								cube.position.set(minx, miny,minz);
+								cube.scale.set( 0.01, 0.01, 0.01 );
+								scene.add( cube );//添加立方体，默认坐标是(0,0,0)，会与摄像机重合
+							}else{
+								let curx = minx + (maxx-minx)/(edgeNum-1)*i;
+								let cury = miny+ (maxy-miny)/(edgeNum-1)*j;
+								let curz = minz + (maxz-minz)/(edgeNum-1)*k;
+								cube.position.set(curx, cury,curz);
+								cube.scale.set( 0.01, 0.01, 0.01 );
+								scene.add( cube );//添加立方体，默认坐标是(0,0,0)，会与摄像机重合
+								
+							}
+							cnt++;
+						
+							if(cnt===total){
+								break;
+							}
+						
+						}
+						if(cnt===total){
+							break;
+						}
+					}
+					if(cnt===total){
+						break;
+					}
+				}
+				loaded=true;
+				renderer = new WebGPURenderer();
+				
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setAnimationLoop( render );
+				// renderer.toneMappingNode = new Nodes.ToneMappingNode( THREE.LinearToneMapping, 1 );
+				// renderer.outputEncoding = THREE.sRGBEncoding;
+				container.appendChild( renderer.domElement );
+
+				window.addEventListener( 'resize', onWindowResize );
+				renderer.render( scene, camera );
+
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+			
+			function render() {
+				// console.log('new'); 
+				let frameStart = performance.now();
+				let time = performance.now();
+                stats.update(time);
+				renderer.render( scene, camera );
+				
+				if (loaded){
+					let frameEnd = performance.now();
+					frameSum += frameEnd - frameStart;
+					if (startFlag && frameCount > 30) {
+						startTime = time;
+						startFlag = false;
+						console.log('startTime',startTime,'duration',startTime-initTime);
+						frameCount=0;
+						// console.log(renderer.info)
+						// let programs=renderer.info.programs
+						// console.log(programs[0].vertexShader)
+				}
+					frameCount += 1;
+					if(frameCount % 1000 === 0) {
+						let fps = 1000 * frameCount / (time - startTime);
+						let ft = frameSum/frameCount;
+						console.log(frameCount,fps,'fps',ft,'ft');
+					} 
+					if ((time - startTime) /1000 > 60 && shouldLog){
+						shouldLog = false;
+						let fps = 1000 * frameCount / (time - startTime);
+						let ft = frameSum/frameCount;
+						console.log('1min', (time - startTime)/1000, frameCount,fps,'fps',ft,'ft');
+					}
+            	}
+				
+			}
+		}
+		</script>
+
+	</body>
+</html>

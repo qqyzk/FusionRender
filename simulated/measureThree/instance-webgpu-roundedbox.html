@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js - WebGPU - Instance Mesh</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	</head>
+	<body>
+		<input  id="button" type="button" value="start" >  
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - WebGPU - Instance Mesh
+		</div>
+
+	
+		<script type="importmap">
+			{
+				"imports": {
+                    "three": "./src/three.module.js",
+					"three/addons/": "./jsm/",
+					"three/nodes": "./src/jsm/nodes/Nodes.js",
+					"stats": "./src/myStats.js",
+                    "roundedbox": "./src/jsm/geometries/RoundedBoxGeometry.js"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+			import { mix, range, normalWorld, oscSine, timerLocal } from 'three/nodes';
+            import Stats from 'stats';
+			import WebGPU from './src/jsm/capabilities/WebGPU.js';
+			import WebGPURenderer from './src/jsm/renderers/webgpu/WebGPURenderer.js';
+            import { RoundedBoxGeometry } from "roundedbox";
+			var btn = document.getElementById("button");  
+        	btn.onclick = function conduct(){
+			let initTime = ( performance || Date ).now()
+			let loaded=false;
+			let startFlag = true;
+			let frameCount = 0;
+			let startTime = null;
+			let shouldLog = true;
+			let first = true;
+			let frameSum=0;
+			let camera, scene, renderer, stats;
+
+			let mesh;
+			const amount = 16;
+			const count = Math.pow( amount, 3 );
+			const dummy = new THREE.Object3D();
+
+			init();
+
+			function init() {
+
+				if ( WebGPU.isAvailable() === false ) {
+
+					document.body.appendChild( WebGPU.getErrorMessage() );
+
+					throw new Error( 'No WebGPU support' );
+
+				}
+
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 100 );
+				camera.position.set( amount * 0.9, amount * 0.9, amount * 0.9 );
+				camera.lookAt( 0, 0, 0 );
+
+				scene = new THREE.Scene();
+
+				const material = new THREE.MeshBasicMaterial();
+
+				// random colors between instances from 0x000000 to 0xFFFFFF
+				const randomColors = range( new THREE.Color( 0x000000 ), new THREE.Color( 0xFFFFFF ) );
+
+				material.colorNode = mix( normalWorld, randomColors, oscSine( timerLocal( .1 ) ) );
+
+
+                // const geometry2 = new THREE.BoxGeometry( 1, 1, 1 );//立方体对象，包含立方体中的顶点(vertices)和面(faces)
+                const geometry2 =  new RoundedBoxGeometry();
+                geometry2.scale( 0.1, 0.1, 0.1 );
+                const material2 = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );//添加材质，让立方体有颜色
+                mesh = new THREE.InstancedMesh( geometry2, material2, count );
+                mesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
+                scene.add( mesh );
+
+				loaded=true;
+				renderer = new WebGPURenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+
+				//
+
+				stats = new Stats();
+				document.body.appendChild( stats.dom );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function animate() {
+
+				render();
+
+				stats.update(performance.now());
+
+			}
+
+			async function render() {
+				let frameStart = performance.now();
+				if ( mesh ) {
+
+					const time = Date.now() * 0.001;
+
+					mesh.rotation.x = Math.sin( time / 4 );
+					mesh.rotation.y = Math.sin( time / 2 );
+
+					let i = 0;
+					const offset = ( amount - 1 ) / 2;
+
+					for ( let x = 0; x < amount; x ++ ) {
+
+						for ( let y = 0; y < amount; y ++ ) {
+
+							for ( let z = 0; z < amount; z ++ ) {
+
+								dummy.position.set( offset - x, offset - y, offset - z );
+								dummy.rotation.y = ( Math.sin( x / 4 + time ) + Math.sin( y / 4 + time ) + Math.sin( z / 4 + time ) );
+								dummy.rotation.z = dummy.rotation.y * 2;
+
+								dummy.updateMatrix();
+
+								mesh.setMatrixAt( i ++, dummy.matrix );
+
+							}
+
+						}
+
+					}
+
+				}
+
+				renderer.render( scene, camera );
+				if (loaded){
+					let time = performance.now();
+					let frameEnd = performance.now();
+					frameSum += frameEnd - frameStart;
+					if (startFlag) {
+						startTime = time;
+						startFlag = false;
+						console.log('startTime',startTime,'duration',startTime-initTime);
+						// console.log(renderer.info)
+						// let programs=renderer.info.programs
+						// console.log(programs[0].vertexShader)
+					}
+					frameCount += 1;
+					if(frameCount % 1000 === 0) {
+						let fps = 1000 * frameCount / (time - startTime);
+						let ft = frameSum/frameCount;
+						console.log(frameCount,fps,'fps',ft,'ft');
+					} 
+					if ((time - startTime) /1000 > 60 && shouldLog){
+						shouldLog = false;
+						let fps = 1000 * frameCount / (time - startTime);
+						let ft = frameSum/frameCount;
+						console.log('1min', (time - startTime)/1000, frameCount,fps,'fps',ft,'ft');
+					}
+            	}
+				
+			}
+		}
+		</script>
+
+	</body>
+</html>

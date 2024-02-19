@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>pinus_noSh.html</title>
+<meta charset="utf-8">
+<link rel="shortcut icon" href="https://threejs.org/files/favicon.ico"/>
+
+<style>
+body{margin:0px;border:0px;background-color:#002244;font-family:Monospace;overflow:hidden;}
+span{position:absolute;color:#ff0;font-size:9pt;cursor:pointer;}
+</style>
+
+</head>
+
+<body>
+
+<span id="spanA" style="left:10px;top:5px;">right click &rarr; inspect &rarr; source code</span>
+<script type="importmap">
+	{
+	  "imports": {
+		"three": "../build/three.module.js",
+		"stats": "./myStats.js"
+	  }
+	}
+  </script>
+<script type="module">
+
+import * as THREE from 'three';
+import { OrbitControls } from './jsm/controls/OrbitControls.js';
+import { mergeGeometries} from './jsm/utils/BufferGeometryUtils.js';
+import WebGPU from './jsm/capabilities/WebGPU.js';
+import WebGPURenderer from './jsm/renderers/webgpu/WebGPURenderer.js';
+import Stats from 'stats';
+const container = document.createElement('div');
+document.body.appendChild(container);
+let stats = new Stats();
+stats.dom.style.top = '20px';
+stats.dom.style.left = '300px';
+container.appendChild(stats.dom);
+
+var camera, scene, renderer, controls, mesh, ambLight, pointLight, tex, texcaule;
+
+var esf=[];
+var mat=[];
+var geo=[];
+
+var cyl=[];
+var matcyl=[];
+var geocyl=[];
+
+var ramo=[];
+var matramo=[];
+var georamo=[];
+
+var g=[];
+var z=0;
+var h=-20;
+var dis=0;
+var p=Math.PI;
+
+for(z=1;z<50;z++){g[z]=new THREE.Group();}
+let sceneGroup = new THREE.Group;
+var ballGeo, material, ball, penGeo, pen, pen2, pen3, mesh;
+
+function init(){
+	if ( WebGPU.isAvailable() === false ) {
+
+		document.body.appendChild( WebGPU.getErrorMessage() );
+
+		throw new Error( 'No WebGPU support' );
+
+	}
+	camera=new THREE.PerspectiveCamera(80,window.innerWidth/window.innerHeight,1,1000);
+	camera.position.set(-30,20,160);
+
+	scene=new THREE.Scene();
+	scene.position.set(0,-5,0);
+
+	// renderer=new THREE.WebGLRenderer({antialias:true});
+	renderer = new WebGPURenderer();
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(window.innerWidth,window.innerHeight);
+	//renderer.shadowMap.enabled=true;
+	renderer.setClearColor(0x002244,1);
+
+	document.body.appendChild(renderer.domElement);
+
+	controls=new OrbitControls(camera,renderer.domElement);
+
+	window.addEventListener('resize',onWindowResize);
+
+	ambLight=new THREE.AmbientLight(0xffcc99,0.5);
+	// scene.add(ambLight);
+
+	pointLight=new THREE.PointLight("#cff",2.0);
+	pointLight.position.set(-80,250,0);
+	pointLight.castShadow=true;
+	pointLight.shadow.mapSize.width=2048;
+	pointLight.shadow.mapSize.height=2048;
+	// scene.add(pointLight);
+    //下面的棕色平面
+	// mesh=new THREE.Mesh(new THREE.PlaneGeometry(350,350),new THREE.MeshStandardMaterial({color:'#320',side:THREE.DoubleSide}));
+	mesh=new THREE.Mesh(new THREE.PlaneGeometry(350,350),new THREE.MeshBasicMaterial({color:'#320'}));
+	mesh.rotation.x=-p/2;
+	mesh.position.set(0,-90,-10);
+	mesh.receiveShadow=true;
+	sceneGroup.add(mesh);
+    //构建树枝
+	ballGeo=new THREE.SphereGeometry(15,24,24,0,0.2,p/2,p/2);
+	// material=new THREE.MeshStandardMaterial({color:'#060',side:THREE.DoubleSide}); 
+	material=new THREE.MeshBasicMaterial({color:'#060'}); 
+	ball=new THREE.Mesh(ballGeo,material);
+	ball.rotation.set(p,0,0);
+	ball.position.set(0,0,3);
+
+	penGeo=ballGeo.clone();
+
+	ball.updateMatrix();
+	// penGeo.merge(ball.geometry,ball.matrix);
+	let ballTmp = ball.clone();
+	ballTmp.geometry.applyMatrix4(ball.matrix);
+	penGeo = mergeGeometries([penGeo, ballTmp.geometry]);
+	
+
+	pen=new THREE.Mesh(penGeo,material);
+
+	pen2=new THREE.Mesh(penGeo,material);
+	pen2.rotation.set(p/2,0,0);
+	pen2.position.set(0,1.5,0);
+	pen2.updateMatrix();
+	// penGeo.merge(pen.geometry, pen2.matrix);
+	let penTmp2 = pen.clone();
+	penTmp2.geometry.applyMatrix4(pen2.matrix);
+	penGeo = mergeGeometries([penGeo, penTmp2.geometry]);
+
+	pen3=new THREE.Mesh(penGeo,material);
+	pen3.rotation.set(p/4,0,0);
+	pen3.position.set(0,1.5,0);
+	pen3.updateMatrix();
+	// penGeo.merge(pen.geometry,pen3.matrix);
+	let penTmp3 = pen.clone();
+	penTmp3.geometry.applyMatrix4(pen3.matrix);
+	penGeo = mergeGeometries([penGeo, penTmp3.geometry]);
+
+	mesh=new THREE.Mesh(penGeo,material);
+	mesh.rotation.set(0,0,p);
+	mesh.castShadow=true;
+    //g[14]是一个穗
+	g[14].add(mesh);
+	g[14].scale.set(0.8,0.8,0.8);
+	g[14].rotation.set(0,0,p);
+
+	g[15]=g[14].clone();
+	g[15].scale.set(0.75,0.75,0.75);
+	g[15].rotation.set(p/2,0,p);
+		g[16]=g[14].clone();
+		g[16].scale.set(0.7,0.7,0.7);
+		g[16].rotation.set(p/3,0,p);
+	g[17]=g[14].clone();
+	g[17].scale.set(0.65,0.65,0.65);
+	g[17].rotation.set(p/4,0,p);
+		g[18]=g[14].clone();
+		g[18].scale.set(0.6,0.6,0.6);
+		g[18].rotation.set(p/5,0,p);
+	g[19]=g[14].clone();
+	g[19].scale.set(0.55,0.55,0.55);
+	g[19].rotation.set(p/6,0,p);
+		g[20]=g[14].clone();
+		g[20].scale.set(0.5,0.5,0.5);
+		g[20].rotation.set(p/7,0,p);
+	g[21]=g[14].clone();
+	g[21].scale.set(0.45,0.45,0.45);
+	g[21].rotation.set(p/8,0,p);
+    //一条横向枝干
+	// tex=new THREE.TextureLoader().load('img/bark.jpg');
+	// tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.RepeatWrapping;
+	// tex.repeat.set(1,1);
+	// texcaule=new THREE.TextureLoader().load('img/bark.jpg');
+	// texcaule.wrapS=THREE.RepeatWrapping;texcaule.wrapT=THREE.RepeatWrapping;
+	// texcaule.repeat.set(1,10);
+
+	geocyl[2]=new THREE.CylinderGeometry(2,0.9,10,10);
+	// matcyl[2]=new THREE.MeshStandardMaterial({map:tex,color:'#990'});
+	// matcyl[2]=new THREE.MeshStandardMaterial({color:'#990'});
+	matcyl[2]=new THREE.MeshBasicMaterial({color:'#990'});
+
+	cyl[2]=new THREE.Mesh(geocyl[2],matcyl[2]);
+	cyl[2].rotation.set(p/2,0,p/2);
+
+	geocyl[3]=new THREE.CylinderGeometry(0.9,0.8,10,10);
+	cyl[3]=new THREE.Mesh(geocyl[3],matcyl[2]);
+	cyl[3].rotation.set(p/2,0.05,p/2);
+		geocyl[4]=new THREE.CylinderGeometry(0.8,0.7,10,10);
+		cyl[4]=new THREE.Mesh(geocyl[4],matcyl[2]);
+		cyl[4].rotation.set(p/2,0.1,p/2);
+	geocyl[5]=new THREE.CylinderGeometry(0.7,0.6,10,10);
+	cyl[5]=new THREE.Mesh(geocyl[5],matcyl[2]);
+	cyl[5].rotation.set(p/2,0.15,p/2);
+		geocyl[6]=new THREE.CylinderGeometry(0.6,0.5,10,10);
+		cyl[6]=new THREE.Mesh(geocyl[6],matcyl[2]);
+		cyl[6].rotation.set(p/2,0.2,p/2);
+	geocyl[7]=new THREE.CylinderGeometry(0.5,0.4,11,10);
+	cyl[7]=new THREE.Mesh(geocyl[7],matcyl[2]);
+	cyl[7].rotation.set(p/2,0.25,p/2);
+		geocyl[8]=new THREE.CylinderGeometry(0.4,0.3,11,10);
+		cyl[8]=new THREE.Mesh(geocyl[8],matcyl[2]);
+		cyl[8].rotation.set(p/2,0.3,p/2);
+	geocyl[9]=new THREE.CylinderGeometry(0.3,0.2,11,10);
+	cyl[9]=new THREE.Mesh(geocyl[9],matcyl[2]);
+	cyl[9].rotation.set(p/2,0.35,p/2);
+		geocyl[10]=new THREE.CylinderGeometry(0.2,0.1,11,10);
+		cyl[10]=new THREE.Mesh(geocyl[10],matcyl[2]);
+		cyl[10].rotation.set(p/2,0.4,p/2);
+
+	georamo[2]=new THREE.BoxGeometry(0.1,0.1,0.1);
+	
+	// matramo[2]=new THREE.MeshBasicMaterial({color:0xffff00,wireframe:true});
+	matramo[2]=new THREE.MeshBasicMaterial({color:0xffff00});
+	ramo[2]=new THREE.Mesh(georamo[2],matramo[2]);
+	ramo[2].position.set(0,0,0);
+
+	cyl[2].position.set(5,0,0);
+	cyl[3].position.set(15,0.25,0);
+	cyl[4].position.set(25,1,0);
+	cyl[5].position.set(35,2.25,0);
+	cyl[6].position.set(45,4,0);
+	cyl[7].position.set(55,6.25,0);
+	cyl[8].position.set(65,9.1,0);
+	cyl[9].position.set(75,12.5,0);
+	cyl[10].position.set(85,16.5,0);
+
+	for(z=2;z<11;z++){cyl[z].castShadow=true;ramo[2].add(cyl[z]);}//枝条添加树枝
+
+	ramo[2].position.set(0,-50,0);
+
+	dis=15;
+	for(z=14;z<22;z++){dis=dis+10;g[z].position.set(dis,0.29*(z-13)**2,-1);}
+	for(z=14;z<22;z++){ramo[2].add(g[z]);}//枝条添加叶子
+
+	ramo[3]=ramo[2].clone();//ramo[2]是一个枝条
+	// 验证一下clone是否是深拷贝
+	// console.log(ramo[3].geometry.attributes.position.array[0],ramo[2].geometry.attributes.position.array[0])
+	// ramo[3].geometry.attributes.position.array[0]=-1;
+	// console.log(ramo[3].geometry.attributes.position.array[0],ramo[2].geometry.attributes.position.array[0])
+	
+	ramo[3].position.y=-52;
+	ramo[3].rotation.y=p/2;
+		ramo[4]=ramo[2].clone();
+		ramo[4].position.y=-48;
+		ramo[4].rotation.y=-p/2;
+	ramo[5]=ramo[2].clone();
+	ramo[5].position.y=-54;
+	ramo[5].rotation.y=p;
+
+	g[40].add(ramo[2]);g[40].add(ramo[3]);g[40].add(ramo[4]);g[40].add(ramo[5]);
+	g[40].position.y=0;
+	g[40].rotation.y=p;
+	sceneGroup.add(g[40]);//g[40]是一个四叉枝条
+	
+    //若干个四叉枝条
+	g[41]=g[40].clone();g[41].position.y= 10;g[41].rotation.y=Math.PI/3;g[41].scale.setScalar(0.95);sceneGroup.add(g[41]);
+	g[42]=g[40].clone();g[42].position.y= 20;g[42].rotation.y=Math.PI/6;g[42].scale.setScalar(0.90);sceneGroup.add(g[42]);
+	g[43]=g[40].clone();g[43].position.y= 30;g[43].rotation.y=Math.PI/2;g[43].scale.setScalar(0.85);sceneGroup.add(g[43]);
+	g[44]=g[40].clone();g[44].position.y= 40;g[44].rotation.y=Math.PI/3;g[44].scale.setScalar(0.80);sceneGroup.add(g[44]);
+	g[45]=g[40].clone();g[45].position.y= 50;g[45].rotation.y=Math.PI/6;g[45].scale.setScalar(0.75);sceneGroup.add(g[45]);
+	g[46]=g[40].clone();g[46].position.y= 60;g[46].rotation.y=Math.PI/2;g[46].scale.setScalar(0.70);sceneGroup.add(g[46]);
+	g[47]=g[40].clone();g[47].position.y= 70;g[47].rotation.y=Math.PI/3;g[47].scale.setScalar(0.65);sceneGroup.add(g[47]);
+	g[48]=g[40].clone();g[48].position.y= 80;g[48].rotation.y=Math.PI/6;g[48].scale.setScalar(0.60);sceneGroup.add(g[48]);
+	g[49]=g[40].clone();g[49].position.y= 90;g[49].rotation.y=Math.PI/2;g[49].scale.setScalar(0.55);sceneGroup.add(g[49]);
+	g[50]=g[40].clone();g[50].position.y=100;g[50].rotation.y=Math.PI/2;g[50].scale.setScalar(0.40);sceneGroup.add(g[50]);
+	g[51]=g[40].clone();g[51].position.y=105;g[51].rotation.y=Math.PI/3;g[51].scale.setScalar(0.30);sceneGroup.add(g[51]);
+	g[52]=g[40].clone();g[52].position.y=110;g[52].rotation.y=Math.PI/6;g[52].scale.setScalar(0.20);sceneGroup.add(g[52]);
+	g[53]=g[40].clone();g[53].position.y=116;g[53].rotation.y=Math.PI/2;g[53].scale.setScalar(0.15);sceneGroup.add(g[53]);
+	g[54]=g[40].clone();g[54].position.y=-25;g[54].rotation.y=Math.PI/3;g[54].scale.setScalar(0.80);sceneGroup.add(g[54]);
+    
+	//树干
+	geocyl[11]=new THREE.CylinderGeometry(0.2,3,200,10);
+	// matcyl[11]=new THREE.MeshStandardMaterial({map:texcaule,color:'#990'});
+	// matcyl[11]=new THREE.MeshStandardMaterial({color:'#990'});
+	matcyl[11]=new THREE.MeshBasicMaterial({color:'#990'});
+	cyl[11]=new THREE.Mesh(geocyl[11],matcyl[11]);
+	cyl[11].position.y=10;
+	sceneGroup.add(cyl[11]);
+
+    //最顶尖的一个穗
+	ramo[90]=g[14].clone();
+	ramo[90].scale.set(0.2,0.2,0.2);
+	ramo[90].position.set(0,113,0);
+	ramo[90].rotation.set(0,0,3*p/2);
+	sceneGroup.add(ramo[90])
+    for(let i=0;i<3;i++){
+        scene.add(sceneGroup.clone());
+    }
+   
+
+}
+
+function onWindowResize(){
+	camera.aspect=window.innerWidth/window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize(window.innerWidth,window.innerHeight);
+}
+
+function animate(){
+	console.log('new')
+	requestAnimationFrame(animate);
+	renderer.render(scene,camera);
+	// controls.update();
+	stats.update(performance.now());
+}
+
+init();
+
+animate();
+
+/*
+
+Hi Three.js followers,
+
+Pinus tree made only with Three.js and a texture
+
+Unsatisfied with trees texturized with png image on big leaves. With objects inside the tree, the big leaves appear.
+
+Here is the result  made only with Three.js tools.
+
+PS: Shadows take some time to be computed.
+
+the link without shadows:
+
+http://jrlazz.eu5.org/anim/pinus_noSh.html
+
+the link with shadows:
+
+http://jrlazz.eu5.org/anim/pinus_Sh.html
+
+Again, Thanks for the great Three.js Team!
+
+Jose Roberto Lazzareschi
+
+*/
+</script>
+
+</body>
+</html>

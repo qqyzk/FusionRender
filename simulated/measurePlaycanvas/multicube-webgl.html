@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>PlayCanvas Hello Cube</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no' />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src='./src/playcanvas-stable.js'></script>
+</head>
+<body>
+    <input  id="button" type="button" value="start" >  
+    <canvas id='application'></canvas>
+    <script>
+        // create a PlayCanvas application
+        const canvas = document.getElementById('application');
+        
+        function example(canvas, deviceType) {
+            let initTime = ( performance || Date ).now()
+			let loaded=false;
+			let startFlag = true;
+			let frameCount = 0;
+			let startTime = null;
+			let shouldLog = true;
+			let first = true;
+			let frameSum=0;
+            let frameEnd,frameStart;
+        const gfxOptions = {
+            deviceTypes: [deviceType],
+            glslangUrl: "./src/glslang.js",
+            twgslUrl: "./src/twgsl.js",
+        };
+
+        pc.createGraphicsDevice(canvas, gfxOptions).then((device) => {
+            const createOptions = new pc.AppOptions();
+            createOptions.graphicsDevice = device;
+           
+            createOptions.componentSystems = [
+                // @ts-ignore
+                pc.RenderComponentSystem,
+                // @ts-ignore
+                pc.CameraComponentSystem,
+                // @ts-ignore
+                pc.LightComponentSystem,
+            ];
+
+            createOptions.resourceHandlers = [
+                // @ts-ignore
+                pc.TextureHandler,
+                // @ts-ignore
+                pc.ContainerHandler,
+            ];
+            const app = new pc.AppBase(canvas);
+            app.init(createOptions);
+            app.start();
+
+            // Set the canvas to fill the window and automatically change resolution to be the same as the canvas size
+            app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+            app.setCanvasResolution(pc.RESOLUTION_AUTO);
+
+            let minx = -0.9, miny = -2, minz= -15;
+            let maxx = 0.9, maxy=2, maxz=-3;
+            let edgeNum=32;
+            let total=8192;
+			let cnt=0;
+            for(let i=0;i<edgeNum;++i){
+                for(let j=0;j<edgeNum;++j){
+                    for(let k=0;k<edgeNum;++k){
+                        let curx = minx + (maxx-minx)/(edgeNum-1)*i;
+                        let cury = miny+ (maxy-miny)/(edgeNum-1)*j;
+                        let curz = minz + (maxz-minz)/(edgeNum-1)*k;
+                        // create box entity
+                        const box = new pc.Entity('cube');
+                        box.addComponent('render', {
+                            type: 'box'
+                        });
+                        box.setPosition(curx,cury,curz);
+                        box.setLocalScale(0.05,0.05,0.05);
+                        app.root.addChild(box);
+                        cnt++;
+						
+                        if(cnt===total){
+                            break;
+                        }
+                    }
+                    if(cnt===total){
+                        break;
+                    }
+                }
+                if(cnt===total){
+                    break;
+                }
+            }
+
+            // create camera entity
+            const camera = new pc.Entity("camera");
+            camera.addComponent("camera", {
+                clearColor: new pc.Color(0.5, 0.6, 0.9),
+            });
+
+            app.root.addChild(camera);
+            camera.setPosition(0, 0, 3);
+
+            // create directional light entity
+            const light = new pc.Entity("light");
+            light.addComponent("light");
+            app.root.addChild(light);
+            light.setEulerAngles(45, 0, 0);
+            loaded=true;
+           
+            app.on("prerender", () => {
+                frameStart = performance.now();
+            });
+            app.on("postrender", () => {
+                frameEnd = performance.now();
+                frameSum += frameEnd - frameStart;
+            });
+            app.on("update", ()=>{
+                console.log('new')
+                 if (loaded){
+
+					let time = performance.now();
+					if (startFlag) {
+						startTime = time;
+						startFlag = false;
+						console.log('startTime',startTime,'duration',startTime-initTime);
+						// console.log(renderer.info)
+						// let programs=renderer.info.programs
+						// console.log(programs[0].vertexShader)
+					}
+					frameCount += 1;
+					if(frameCount % 1000 === 0) {
+						let fps = 1000 * frameCount / (time - startTime);
+                        let ft = frameSum/frameCount;
+						console.log(frameCount,fps,'fps',ft,'ft');
+					} 
+					if ((time - startTime) /1000 > 60 && shouldLog){
+						shouldLog = false;
+						let fps = 1000 * frameCount / (time - startTime);
+                        let ft = frameSum/frameCount;
+						console.log('1min', (time - startTime)/1000, frameCount,fps,'fps',ft,'ft');
+					}
+            	}
+            });
+        });
+    }
+    var btn = document.getElementById("button");  
+    btn.onclick = function conduct(){
+            example(canvas, "webgl2")
+    }
+    </script>
+</body>
+</html> 

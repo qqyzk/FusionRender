@@ -1,0 +1,74 @@
+{
+  "name": "three-render-objects",
+  "version": "1.28.6",
+  "description": "Easy way to render ThreeJS objects with built-in interaction defaults",
+  "license": "MIT",
+  "type": "module",
+  "unpkg": "dist/three-render-objects.min.js",
+  "main": "dist/three-render-objects.mjs",
+  "module": "dist/three-render-objects.mjs",
+  "types": "dist/three-render-objects.d.ts",
+  "exports": {
+    "types": "./dist/three-render-objects.d.ts",
+    "umd": "./dist/three-render-objects.min.js",
+    "default": "./dist/three-render-objects.mjs"
+  },
+  "sideEffects": [
+    "./src/*.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vasturiano/three-render-objects.git"
+  },
+  "homepage": "https://github.com/vasturiano/three-render-objects",
+  "keywords": [
+    "3d",
+    "three",
+    "objects",
+    "scene",
+    "tick",
+    "webgl"
+  ],
+  "author": {
+    "name": "Vasco Asturiano",
+    "url": "https://github.com/vasturiano"
+  },
+  "bugs": {
+    "url": "https://github.com/vasturiano/three-render-objects/issues"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "rimraf dist && rollup -c",
+    "dev": "rollup -w -c rollup.config.dev.js",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@tweenjs/tween.js": "18 - 21",
+    "accessor-fn": "1",
+    "kapsule": "1",
+    "polished": "4"
+  },
+  "peerDependencies": {
+    "three": "*"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.6",
+    "@babel/preset-env": "^7.22.6",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^25.0.2",
+    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-terser": "^0.4.3",
+    "postcss": "^8.4.24",
+    "rimraf": "^5.0.1",
+    "rollup": "^3.26.1",
+    "rollup-plugin-dts": "^5.3.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "three": "^0.154.0",
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=12"
+  }
+}

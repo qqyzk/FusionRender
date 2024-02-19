@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first orillusion app</title>
+		<style>
+			body { margin: 0; }
+		</style>   
+	</head>
+	<body>
+        <input  id="button" type="button" value="start" >  
+        <canvas id="renderCanvas"></canvas>
+        <script  type="importmap">  
+            {  
+                "imports": { "@orillusion/core": "./src/orrillusion.es.js" }  
+            }  
+        </script>  
+		<script type="module">
+            import { Scene3D, HoverCameraController, Engine3D, AtmosphericComponent, Object3D, Camera3D, 
+                Vector3, View3D, DirectLight, KelvinUtil, LitMaterial, MeshRenderer, BoxGeometry, CameraUtil, InstancedMesh,Matrix4} 
+                from "@orillusion/core";
+                let initTime = ( performance || Date ).now()
+			let loaded=false;
+			let startFlag = true;
+			let frameCount = 0;
+			let startTime = null;
+			let shouldLog = true;
+			let first = true;
+			let frameSum=0;
+            let scene;
+            let edgeNum=32;
+            let minx=-400, miny=-200, minz=-400;
+            let maxx=400, maxy=200, maxz = 200;
+            let tmp = new Object3D();
+            let transform = tmp.transform;
+            let localPos = transform.localPosition;
+            let localRot = transform.localRotQuat;
+            let loaclScale = transform.localScale;
+            function initScene() {
+                let mat = new LitMaterial();
+                mat.baseMap = Engine3D.res.grayTexture;
+                mat.roughness = 0.4;
+                mat.metallic = 0.6;
+                let cube = new BoxGeometry(10, 10, 10);
+                let box = new InstancedMesh(cube,mat,edgeNum*edgeNum*edgeNum);
+                let mr2 = box.addComponent(MeshRenderer);
+                scene.addChild(box);
+                for(let i=0;i<edgeNum;i++){
+                    for(let j=0;j<edgeNum;j++){
+                        for(let k=0;k<edgeNum;k++){
+                            let curx = minx + (maxx-minx)/(edgeNum-1)*i;
+                            let cury = miny+ (maxy-miny)/(edgeNum-1)*j;
+                            let curz = minz + (maxz-minz)/(edgeNum-1)*k;
+
+                            localPos.x = curx;
+                            localPos.y = cury;
+                            localPos.z = curz;
+                            let Mat = new Matrix4();
+                            Mat.compose(localPos,localRot,loaclScale);
+                            box.setMatrixAt(i*edgeNum*edgeNum+j*edgeNum+k,Mat);
+                        }
+                    }
+                }
+              
+            }
+
+            function renderUpdate(){
+                if (loaded){
+					let time = performance.now();
+					if (startFlag) {
+						startTime = time;
+						startFlag = false;
+						console.log('startTime',startTime,'duration',startTime-initTime);
+						// console.log(renderer.info)
+						// let programs=renderer.info.programs
+						// console.log(programs[0].vertexShader)
+					}
+					frameCount += 1;
+					if(frameCount % 1000 === 0) {
+						let fps = 1000 * frameCount / (time - startTime);
+						console.log(frameCount,fps,'fps');
+					} 
+					if ((time - startTime) /1000 > 60 && shouldLog){
+						shouldLog = false;
+						let fps = 1000 * frameCount / (time - startTime);
+						console.log('1min', (time - startTime)/1000, frameCount,fps,'fps');
+					}
+            	}
+            }
+
+            async function run(){
+                await Engine3D.init({ beforeRender: () => renderUpdate() });
+                scene = new Scene3D();
+                scene.addComponent(AtmosphericComponent);
+
+                 // init camera3D
+                let mainCamera = CameraUtil.createCamera3D(null, scene);
+                mainCamera.perspective(60, Engine3D.aspect, 1, 2000.0);
+                //set camera data
+                mainCamera.object3D.addComponent(HoverCameraController).setCamera(0, -25, 1000);
+
+                await initScene();
+
+                let view = new View3D();
+                view.scene = scene;
+                view.camera = mainCamera;
+                loaded=true;
+                Engine3D.startRenderView(view);
+
+            }
+            var btn = document.getElementById("button");  
+            btn.onclick = function conduct(){
+                run();
+            }
+		</script>
+	</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Basic Scene with WebXR</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<!-- <link type="text/css" rel="stylesheet" href="style.css"> -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r126/three.js" crossorigin="anonymous"></script> -->
+</head>
+
+<body>
+    <input  id="button" type="button" value="start" >  
+    <!-- <script type="importmap">
+        {
+            "imports": {
+                "three": "./src/three.module.js",
+                "RoomEnvironment": "./src/RoomEnvironment.js",
+                "stats": "./src/myStats.js"
+
+            }
+        }
+    </script>  -->
+	<script type="module">
+    
+        // To start an AR scene with webXR, we can use a handy button provided by three.js
+        // We first have to import it because it is a javascript module
+       
+        import * as THREE from "./src/three.module.js";
+       
+        import { RoomEnvironment } from "./src/RoomEnvironment2.js";
+        import Stats from "./src/myStats.js";
+      
+
+        let camera, scene, renderer,controls,stats,content;
+        let loader,mesh; // we need to create a variable for a gltf model loader
+        let girl = null;
+        let turbo = null;
+        let tree = null;
+        let mononoke = null;
+        let models = [];
+        var btn = document.getElementById("button");  
+        btn.onclick = function conduct(){
+            let loaded=false;
+        let initTime = ( performance || Date ).now()
+        console.log('init time',initTime);
+		init();
+		// animate();
+
+		function init() { 
+			const container = document.createElement('div');
+			document.body.appendChild(container);
+            stats = new Stats();
+            stats.dom.style.top = '20px';
+            stats.dom.style.left = '300px';
+            container.appendChild(stats.dom);
+            renderer = new THREE.WebGLRenderer({alpha: true });
+            console.log('is webgl2',renderer.capabilities.isWebGL2);
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			container.appendChild(renderer.domElement);
+           
+            // const pmremGenerator = new THREE.PMREMGenerator( renderer );
+			scene = new THREE.Scene();
+            // scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).texture;
+            
+			camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight,1,100 );
+
+            // const geometry = new THREE.BoxGeometry( 1, 1, 1 );//立方体对象，包含立方体中的顶点(vertices)和面(faces)
+            // const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );//添加材质，让立方体有颜色
+            // const cube = new THREE.Mesh( geometry, material );//网格包括一个几何体以及作用在几何体上的材质，可以直接将网格对象放到场景中，并且让他自由移动
+            // scene.add( cube );//添加立方体，默认坐标是(0,0,0)，会与摄像机重合
+            //添加立方体
+           
+            // const material2 = [
+            //     new THREE.MeshBasicMaterial({ color: 0xff0000 }),
+            //     new THREE.MeshBasicMaterial({ color: 0x0000ff }),
+            //     new THREE.MeshBasicMaterial({ color: 0x00ff00 }),
+            //     new THREE.MeshBasicMaterial({ color: 0xff00ff }),
+            //     new THREE.MeshBasicMaterial({ color: 0x00ffff }),
+            //     new THREE.MeshBasicMaterial({ color: 0xffff00 })
+            // ];
+             
+            let minx = -0.5, miny = -1, minz= -15;
+            let maxx = 0.5, maxy=1, maxz=-3;
+            let edgeNum=16;
+            let total=4096;
+			let cnt=0;
+            for(let i=0;i<edgeNum;++i){
+                for(let j=0;j<edgeNum;++j){
+                    for(let k=0;k<edgeNum;++k){
+                        const geometry2 = new THREE.BoxGeometry( 1, 1, 1 );//立方体对象，包含立方体中的顶点(vertices)和面(faces)
+                        const material2 = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );//添加材质，让立方体有颜色
+                    
+                        const cube = new THREE.Mesh( geometry2, material2 );//网格包括一个几何体以及作用在几何体上的材质，可以直接将网格对象放到场景中，并且让他自由移动
+                        // console.log(cube)
+                        // break;
+                        if(edgeNum===1){
+                            cube.position.set(minx, miny,minz);
+                            cube.scale.set( 0.01, 0.01, 0.01 );
+                            scene.add( cube );//添加立方体，默认坐标是(0,0,0)，会与摄像机重合
+                        }else{
+                            let curx = minx + (maxx-minx)/(edgeNum-1)*i;
+                            let cury = miny+ (maxy-miny)/(edgeNum-1)*j;
+                            let curz = minz + (maxz-minz)/(edgeNum-1)*k;
+                            cube.position.set(curx, cury,curz);
+                            cube.scale.set( 0.01, 0.01, 0.01 );
+                            scene.add( cube );//添加立方体，默认坐标是(0,0,0)，会与摄像机重合
+                        }
+                        cnt++;
+						
+                        if(cnt===total){
+                            break;
+                        }
+                    }
+                    if(cnt===total){
+                        break;
+                    }
+                }
+                if(cnt===total){
+                    break;
+                }
+            }
+            console.log('scene loaded',performance.now());
+            loaded = true;
+			window.addEventListener('resize', onWindowResize, false);
+		}
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+        let startFlag = true;
+        let frameCount = 0;
+        let startTime = null;
+        let shouldLog = true;
+        let first = true;
+        let frameSum=0;
+        // renderer.compile(scene,camera);
+		function animate(t) {
+            let frameStart = performance.now();
+			requestAnimationFrame( animate );
+            // for(let i=0;i<models.length;i++) {
+            //     models[i].rotation.y += 0.01;
+            // } 
+       
+            // console.log(timestamp);
+            let time = performance.now();
+            stats.update(time);
+            
+			renderer.render(scene, camera);
+            if (loaded){
+                let frameEnd = performance.now();
+                frameSum += frameEnd - frameStart;
+                if (startFlag && frameCount > 30) {
+						startTime = time;
+						startFlag = false;
+						console.log('startTime',startTime,'duration',startTime-initTime);
+						frameCount=0;
+						// console.log(renderer.info)
+						// let programs=renderer.info.programs
+						// console.log(programs[0].vertexShader)
+				}
+               
+                frameCount += 1;
+                if(frameCount % 1000 === 0) {
+                    let fps = 1000 * frameCount / (time - startTime);
+                    let ft = frameSum/frameCount;
+                    console.log(frameCount,fps,'fps',ft,'ft');
+                } 
+                if ((time - startTime) /1000 > 60 && shouldLog){
+                    shouldLog = false;
+                    let fps = 1000 * frameCount / (time - startTime);
+                    let ft = frameSum/frameCount;
+                    console.log('1min', (time - startTime)/1000, frameCount,fps,'fps',ft,'ft');
+                }
+            }
+            
+          
+		}
+        window.requestAnimationFrame(animate);
+    }
+     
+	</script>
+   
+</body>
+
+</html>

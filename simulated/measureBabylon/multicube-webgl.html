@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first babylon.js app</title>
+		<style>
+			body { margin: 0; }
+		</style>
+        <script src="./src/babylon.js"></script>
+        <script src="./src/babylon.glTFFileLoader.js"></script>
+	</head>
+	<body>
+        <input  id="button" type="button" value="start" >  
+        <canvas id="renderCanvas"></canvas>
+       
+		<script>
+            var btn = document.getElementById("button");  
+        	btn.onclick = function conduct(){
+			let initTime = ( performance || Date ).now()
+			let loaded=false;
+			let startFlag = true;
+			let frameCount = 0;
+			let startTime = null;
+			let shouldLog = true;
+			let first = true;
+			let frameSum=0;
+            let girl=null;
+            // get the canvas DOM element
+            var canvas = document.getElementById('renderCanvas');
+            canvas.width=window.innerWidth;
+            canvas.height=window.innerHeight;
+            // Load the 3D engine
+            var engine = new BABYLON.Engine(canvas, {antialias:true,adaptToDeviceRatio:true});
+            console.log(engine.webGLVersion)
+            // CreateScene function that creates and return the scene
+            var createScene = function(){
+                // Create a basic BJS Scene object
+                var scene = new BABYLON.Scene(engine);
+                // Create a FreeCamera, and set its position to {x: 0, y: 5, z: -10}
+                var camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5, -10), scene);
+                // Target the camera to scene origin
+                camera.setTarget(BABYLON.Vector3.Zero());
+                // Attach the camera to the canvas
+                camera.attachControl(canvas, false);
+                // Create a basic light, aiming 0, 1, 0 - meaning, to the sky
+                var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
+                
+                let minx=-2, miny=-7, minz=1;
+                let maxx=2, maxy=2, maxz = 20;
+                 // Our built-in 'sphere' shape.
+                
+                let edgeNum=32;
+                let total=8192;
+			    let cnt=0;
+                for(let i=0;i<edgeNum;++i){
+                    for(let j=0;j<edgeNum;++j){
+                        for(let k=0;k<edgeNum;++k){
+                            let cube= BABYLON.MeshBuilder.CreateBox("box",{size:0.1} , scene);
+                            let curx = minx + (maxx-minx)/(edgeNum-1)*i;
+                            let cury = miny+ (maxy-miny)/(edgeNum-1)*j;
+                            let curz = minz + (maxz-minz)/(edgeNum-1)*k;
+                            cube.position = new BABYLON.Vector3(curx,cury,curz);
+                            cnt++;
+						
+                            if(cnt===total){
+                                break;
+                            }
+                        }
+                        if(cnt===total){
+                            break;
+                        }
+                    }
+                    if(cnt===total){
+                        break;
+                    }
+                }
+                loaded=true;
+                return scene;
+            }
+            // call the createScene function
+            var scene = createScene();
+            // run the render loop
+            // Register and execute a render loop. The engine can have more than one render function
+            engine.runRenderLoop(function(){
+                // Render the scene
+                let frameStart = performance.now();
+
+                scene.render();
+                if (loaded){
+					let time = performance.now();
+					let frameEnd = performance.now();
+					frameSum += frameEnd - frameStart;
+					if (startFlag) {
+						startTime = time;
+						startFlag = false;
+						console.log('startTime',startTime,'duration',startTime-initTime);
+						// console.log(renderer.info)
+						// let programs=renderer.info.programs
+						// console.log(programs[0].vertexShader)
+					}
+					frameCount += 1;
+					if(frameCount % 1000 === 0) {
+						let fps = 1000 * frameCount / (time - startTime);
+						let ft = frameSum/frameCount;
+						console.log(frameCount,fps,'fps',ft,'ft');
+					} 
+					if ((time - startTime) /1000 > 60 && shouldLog){
+						shouldLog = false;
+						let fps = 1000 * frameCount / (time - startTime);
+						let ft = frameSum/frameCount;
+						console.log('1min', (time - startTime)/1000, frameCount,fps,'fps',ft,'ft');
+					}
+            	}
+            });
+            // the canvas/window resize event handler
+            window.addEventListener('resize', function(){
+                engine.resize();
+               
+            });
+        }
+		</script>
+	</body>
+</html>
