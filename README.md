@@ -47,7 +47,7 @@ These examples were initially designed for Three.js-WebGL. We made minor adjustm
 
 The results are illustrated as follows:
 
-<img src='./docs/realcase.png'/>
+<img src='./docs/realcase.png' height=400 />
 
 The codes are located in `./realCase` and `./src/dev/examples/A-pimus-noSh-our.html`. The baselines of WebGL and WebGPU end with `-webgl` and `-webgpu`, and the code of FusionRender end with `-our`. For Force Graph, replace three node modules with the changed ones provided in the `node_module` folder before starting.
 
