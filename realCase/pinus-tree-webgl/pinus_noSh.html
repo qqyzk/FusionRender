@@ -18,16 +18,16 @@ span{position:absolute;color:#ff0;font-size:9pt;cursor:pointer;}
 <script type="importmap">
 	{
 	  "imports": {
-		"three": "../../src/three.module.js",
-		"stats": "../../src/myStats.js"
+		"three": "./src/three.module.js",
+		"stats": "./src/myStats.js"
 	  }
 	}
   </script>
 <script type="module">
 
 import * as THREE from 'three';
-import { OrbitControls } from '../../src/jsm/controls/OrbitControls.js';
-import { mergeGeometries} from '../../src/jsm/utils/BufferGeometryUtils.js';
+import { OrbitControls } from './src/jsm/controls/OrbitControls.js';
+import { mergeGeometries} from './src/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'stats';
 const container = document.createElement('div');
 document.body.appendChild(container);

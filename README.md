@@ -4,10 +4,6 @@
 
 We introduce FusionRender, a system designed to enhance graphic rendering performance in web browsers by merging graphics rendering and reducing communication overhead.
 
-During the rendering process, FusionRender initially groups objects and consolidates the rendering of graphics within the same group, thereby reducing the frequency of CPU-to-GPU communication. To determine which objects can be merged, FusionRender analyzes each object and assigns a signature. Subsequently, signatures with the same hash value are identified, enabling the grouping of graphics based on their signatures. Graphics within the same
-group are then rendered using the same rendering pipeline.
-
-When rendering the group of objects together, the data is concatenated and transmitted to the GPU. To ensure that the data required for each graphic’s rendering is accessible after merging, FusionRender employs instance indices to track individual objects. Building upon the abovementioned method, we have considered dividing the merge operations into several batches for submission.
 
 <img src='./docs/overview.png' height=400 />
 
@@ -15,40 +11,207 @@ When rendering the group of objects together, the data is concatenated and trans
 
 We implement a prototype of FusionRender for Three.js. We use our renderer for the WebGPU rendering process. For the shared aspects of graphics rendering, such as classes representing three-dimensional graphics, cameras, and lighting, we integrated code from three.js. We can apply a similar integration approach to replace the renderer and seamlessly incorporate it with our system for other frameworks, as most graphics rendering frameworks have the same key components.
 
-The codes are located in `./src/dev`. Using `npm run dev` to start. See examples in `./examples`. The main changes are located in `./examples/jsm/renderers/common/Renderer.js` and `./examples/jsm/renderers/WebGPU/WebGPUBackend.js`.
+### Setup
 
+The codes are located in `./src/three.js-fusionrender`. To access them, navigate to the directory using the following command:
+
+```bash
+cd ./src/dev
+```
+
+Once you're in the `./src/three.js-fusionrender` directory, install the required dependencies using npm:
+
+```bash 
+npm install
+```
+
+### Usage
+
+After installing the dependencies, you can run the project using the following command:
+
+```bash
+npm run dev
+```
+
+After starting the project, you can find the access URL in the terminal logs. It will be similar to:
+
+```bash
+Server running at: https://localhost:8080
+```
+
+You can access the application by navigating to this URL in your web browser.
+
+Upon opening the URL, you will see a directory listing. Click on the `examples` directory to view multiple HTML files. Each HTML file represents a different application. Click on the HTML file corresponding to the application you want to explore to launch it.
+
+### Examples
+
+For those interested in exploring specific examples, they are located in the `./examples` directory. 
+
+### Code Changes
+
+If you wish to delve into the main changes made to the codebase, you can find them in the following files:
+
+* ./examples/jsm/renderers/common/Renderer.js
+* ./examples/jsm/renderers/WebGPU/WebGPUBackend.js
+
+These files contain the core modifications implemented for FusionRender within the Three.js framework.
 
 ## Simulated Evaluation
 
-We conduct simulated experiments to test the performance of FusionRender under varying levels of scene complexity. We progressively increase the number of rendered cubes ([512, 1024, 2048, 4096, 8192, 16384, 32768]) and measure the performance of FusionRender as well as existing framework. The results are illustrated as follows.
+We conduct simulated experiments to test the performance of FusionRender under varying levels of scene complexity. We progressively increase the number of rendered cubes and measure the performance of FusionRender as well as existing framework. 
 
-<img src='./docs/simulation.png'/>
+### Baseline Setup
 
-In simulated experiments, FusionRender demonstrates a median rendering performance improvement of 29.3%-122.1% compared to the existing optimal baseline.
+The baseline codes are located in the simulated directory. Use the following command to enter the directory in your terminal:
 
-The codes of baselines are located in `simulated`. `measureThree`, `measureBabylon`, `measurePlaycanvas`, `measureOrillusion` contains code for measuring Three.js, Babylon.js, PlayCanvas, and Orillusion,  respectively. For each of them, `multicube-webgl.html` measure performance of WebGL, and `multicube-webpu.html` measure performace of WebGPU. The measurement of FusionRender can be done by `./src/dev/examples/A-multicube-webgpu.html`. The FPS will be logged to the web developer tool.
+```bash
+cd simulated
+```
+
+To run the baseline measurements, you need to set up a local server. You can use tools like http-server to do this. Install http-server globally if you haven't already:
+
+```bash
+npm install -g http-server
+```
+
+Then, start the server in the simulated directory:
+
+```bash
+http-server -c-1
+```
+
+This command starts a server with caching disabled (-c-1).
+
+Once the server is running, access the provided URL in your web browser. You can then click on the corresponding HTML file to open it and begin the baseline measurements.
+
+### Measurement
+
+After setting up the local server and navigating to the simulated directory, you can access the measurement scripts for each baseline framework:
+
+* Three.js: measureThree
+* Babylon.js: measureBabylon
+* PlayCanvas: measurePlaycanvas
+* Orillusion: measureOrillusion
+
+Each framework has HTML files (multicube-webgl.html and multicube-webpu.html) for measuring performance using WebGL and WebGPU, respectively.
+
+After setting up the local server, navigate to the corresponding directory where the HTML files are located using your web browser.
+
+Click on the HTML files (multicube-webgl.html or multicube-webpu.html) to open them. These files contain the measurement scripts for each framework.
+
+While running the measurements, you can open the HTML files locally on your machine to view the code and understand how each framework is implemented.
+
+For FusionRender, you can find the code for the simulated experiments in the `./src/three.js-fusionrender/examples/A-multicube-WebGPU.html` file. To run these experiments, follow the same setup process as described in the "Our Renderer" section.
+
+You can adjust the number of rendered cubes by modifying the `edgeNum` and `total` parameters in the HTML files. To view the measurement results, open the web developer tool and navigate to the console. The FPS (frames per second) will be logged there.
 
 
 ## Real Case Study
 
-In order to explore the performance of FusionRender in real-world scenarios with more advanced functionality and complex scenes, we compared FusionRender, Three.js-WebGL, and Three.js-WebGPU. We selected examples from the Three.js Forum posted last year, focusing on open-source examples with performance issues on mobile devices and excluding those with custom GLSL shaders.
+In order to explore the performance of FusionRender in real-world scenarios with more advanced functionality and complex scenes. The examples were initially designed for Three.js-WebGL. We made minor adjustments to make them compatible with Three.js-WebGPU and FusionRender.
 
-The cases used are as follows:
 
-* [PinusTree](https://jrlazz.eu5.org/anim/pinus_noSh.html): Rendering a pine tree composed of a hierarchical graphics structure, with larger sub-graphics encompassing smaller ones. Computing the positions of these graphics necessitates hierarchical calculations involving varying matrix multiplications, demanding more CPU computations. Additionally, it incorporates point and ambient lighting, comprising 1 Plane, 60 Boxes, 541 Cylinders, and 481 clusters of leaves, where each cluster is formed by merging eight spheres into a single graphic.
+### [PinusTree](https://jrlazz.eu5.org/anim/pinus_noSh.html)
 
-* [ForceGraph](https://github.com/vasturiano/3d-force-graph/tree/master): Drawing force-directed graphs involves points and edges, where the distance between points and the magnitude of forces between them are related. A more randomized distribution of graphics may lead to increased cache misses during GPU rendering. The graph consists of 8000 spheres and 7999 cylinders.
+PinusTree renders a pine tree composed of a hierarchical graphics structure, with larger sub-graphics encompassing smaller ones. Computing the positions of these graphics necessitates hierarchical calculations involving varying matrix multiplications, demanding more CPU computations. Additionally, it incorporates point and ambient lighting, comprising 1 Plane, 60 Boxes, 541 Cylinders, and 481 clusters of leaves, where each cluster is formed by merging eight spheres into a single graphic.
 
-* [BubblePose](https://github.com/wunderdogsw/go-23-app): Rendering graphics based on the coordinates of the human body’s skeleton. The graphics are structured hierarchically, and hierarchical calculations for graphics positions involve more CPU computation compared to simulation experiments. It includes 6451 Spheres.
+<img src='./docs/pinustree.png' height=200>
 
-<img src='./docs/realcasescene.png'/>
+#### Usage
 
-These examples were initially designed for Three.js-WebGL. We made minor adjustments to make them compatible with Three.js-WebGPU and FusionRender. Moreover, we remove components for neural network inference and focus solely on rendering. Throughout this modification process, we ensured the examples remained consistent across the three comparative frameworks.
+Baseline versions of PinusTree, based on WebGL and WebGPU, are respectively located in the following directories:
 
-The results are illustrated as follows:
+* /realCase/pinus-tree-webgl
 
-<img src='./docs/realcase.png' height=300 />
+* /realCase/pinus-tree-webgpu
 
-The codes are located in `./realCase` and `./src/dev/examples/A-pimus-noSh-our.html`. The baselines of WebGL and WebGPU end with `-webgl` and `-webgpu`, and the code of FusionRender end with `-our`. For Force Graph, replace three node modules with the changed ones provided in the `node_module` folder before starting.
+To run these baseline versions, navigate to the respective directory, set up a local server, and access the HTML file named `pinus_noSh.html` in your web browser.
+
+The FusionRender version of PinusTree's code is located in `./src/three.js-fusionrender/examples/A-pinus-tree-fusionrender.html`. Similarly, to run the FusionRender version, navigate to the directory, set up a local server, and access the HTML file in your web browser.
+
+Once the application is running, you can check the performance in the web developer tools.
+
+### [ForceGraph](https://github.com/vasturiano/3d-force-graph/tree/master)
+
+ForceGraph Draws force-directed graphs involves points and edges, where the distance between points and the magnitude of forces between them are related. A more randomized distribution of graphics may lead to increased cache misses during GPU rendering. The graph consists of 8000 spheres and 7999 cylinders.
+
+<img src='./docs/forcegraph.png' height=200>
+
+#### Setup
+
+Baseline versions of ForceGraph, based on WebGL and WebGPU, as well as the FusionRender version, are respectively located in the following directories:
+
+* ./realCase/3d-force-graph-webgl
+* ./realCase/3d-force-graph-webgpu
+* ./realCase/3d-force-graph-fusionrender
+
+Enter the directory of the version you want to use. For example, for the WebGPU version:
+
+```bash
+cd ./realCase/3d-force-graph-webgpu
+```
+
+Run the following command to install dependencies:
+
+```bash
+npm install
+```
+
+Replace the `three-forcegraph` and `three-render-objects` folders in the `node_modules` directory with the ones located in `node_module` directory.
+
+Run the following command to build the project:
+
+```bash
+npm build
+```
+
+#### Usage
+
+Use a tool like http-server to set up a local server in the directory.
+
+Once the server is running, open the example/A-fit-to-canvas.html file in your web browser.
+
+Once the application is running, you can check the performance in the web developer tools.
+
+
+### [BubblePose](https://github.com/wunderdogsw/go-23-app)
+
+BubblePose Renders graphics based on the coordinates of the human body’s skeleton. The graphics are structured hierarchically, and hierarchical calculations for graphics positions involve more CPU computation compared to simulation experiments. It includes 6451 Spheres.
+
+<img src='./docs/bubblepose.png' height=200>
+
+
+#### Setup
+
+Baseline versions of BubblePose, based on WebGL and WebGPU, as well as the FusionRender version, are respectively located in the following directories:
+
+* ./realCase/bubble-pose-webgl
+* ./realCase/bubble-pose-webgpu
+* ./realCase/bubble-pose-fusionrender
+
+Enter the directory of the version you want to use. For example, for the WebGPU version:
+
+```bash
+cd ./realCase/bubble-pose-webgpu
+```
+
+Run the following command to install dependencies:
+
+```bash
+npm install
+```
+
+#### Usage
+
+Run the following command to start the application:
+
+```bash
+npm run dev
+```
+
+Once the application is running, open the URL displayed in the terminal in your web browser. You can check the performance in the web developer tools.
+
+
+
 
 

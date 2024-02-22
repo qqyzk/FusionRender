@@ -18,17 +18,17 @@ span{position:absolute;color:#ff0;font-size:9pt;cursor:pointer;}
 <script type="importmap">
 	{
 	  "imports": {
-		"three": "../../src/three.module.js"
+		"three": "./src/three.module.js"
 	  }
 	}
   </script>
 <script type="module">
 
 import * as THREE from 'three';
-import { OrbitControls } from '../../src/jsm/controls/OrbitControls.js';
-import { mergeGeometries} from '../../src/jsm/utils/BufferGeometryUtils.js';
-import WebGPU from '../../src/jsm/capabilities/WebGPU.js';
-import WebGPURenderer from '../../src/jsm/renderers/webgpu/WebGPURenderer.js';
+import { OrbitControls } from './src/jsm/controls/OrbitControls.js';
+import { mergeGeometries} from './src/jsm/utils/BufferGeometryUtils.js';
+import WebGPU from './src/jsm/capabilities/WebGPU.js';
+import WebGPURenderer from './src/jsm/renderers/webgpu/WebGPURenderer.js';
 
 var camera, scene, renderer, controls, mesh, ambLight, pointLight, tex, texcaule;
 
