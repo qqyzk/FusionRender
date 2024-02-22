@@ -1,13 +1,12 @@
 # FusionRender
 
-## Introduction
 
-We introduce FusionRender, a system designed to enhance graphic rendering performance in web browsers by merging graphics rendering and reducing communication overhead.
+FusionRender is a system designed to enhance graphic rendering performance in web browsers by merging graphics rendering and reducing communication overhead.
 
 
 <img src='./docs/overview.png' height=400 />
 
-## Our Renderer
+## Core Implementation Guide
 
 We implement a prototype of FusionRender for Three.js. We use our renderer for the WebGPU rendering process. For the shared aspects of graphics rendering, such as classes representing three-dimensional graphics, cameras, and lighting, we integrated code from three.js. We can apply a similar integration approach to replace the renderer and seamlessly incorporate it with our system for other frameworks, as most graphics rendering frameworks have the same key components.
 
